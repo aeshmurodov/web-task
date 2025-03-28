@@ -439,7 +439,7 @@
           const editorInstance = window.imageEditor;
 
           // --- Загрузка изображения по умолчанию (можно убрать, если не нужно) ---
-          const imageUrl = "{{ url_for('static', filename='default.jpg') }}"; // Путь к вашему default.jpg
+          const imageUrl = "https://loremflickr.com/320/240"; // Путь к вашему default.jpg
           if (editorInstance) {
               // Проверяем, существует ли файл изображения по умолчанию перед загрузкой
               fetch(imageUrl)
