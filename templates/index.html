@@ -79,62 +79,57 @@
           color: #000;
       }
 
-      /* Ensure results inside modal still use flex */
-      #results-modal .results {
-          display: flex;
-          justify-content: space-around;
-          align-items: flex-start;
-          flex-wrap: wrap;
-      }
-
+      /* Возможно, немного уменьшить flex-basis для 4х элементов */
       #results-modal .result-item {
-           /* Adjustments if needed for modal layout */
-           flex-basis: 200px; /* Example base width */
+           flex-basis: 180px; /* Или используйте проценты/медиа-запросы */
+           flex-grow: 1;
+           margin: 10px;
+           text-align: center;
       }
       #results-modal .result-item img {
-          max-height: 200px; /* Adjust max height for modal */
+          max-height: 180px; /* Можно немного уменьшить */
+          max-width: 100%;
+          border: 1px solid #ccc;
+          background-color: white;
+          margin-top: 5px;
       }
 
-      #results-modal .download-links a {
-            display: inline-block; /* Allows padding and margins */
-            padding: 8px 15px;     /* Vertical and horizontal padding */
-            margin-top: 5px;       /* Add some space above the link */
-            background-color: #007bff; /* Example blue background */
-            color: white;            /* White text */
-            border: none;            /* Remove default border */
-            border-radius: 4px;      /* Slightly rounded corners */
-            text-decoration: none;   /* Remove underline */
-            font-size: 0.9em;        /* Adjust font size if needed */
-            cursor: pointer;         /* Ensure pointer cursor */
-            text-align: center;
-            transition: background-color 0.2s ease; /* Smooth hover effect */
-        }
-
-        /* Style for hover state */
-        #results-modal .download-links a:hover {
-            background-color: #0056b3; /* Darker blue on hover */
-            color: white;            /* Keep text white */
-            text-decoration: none;   /* Ensure no underline on hover */
-        }
-
-        /* Style for active (clicked) state */
-        #results-modal .download-links a:active {
-            background-color: #004085; /* Even darker blue when clicked */
-        }
-
-      /* --- ДОБАВЛЕНЫ СТИЛИ ДЛЯ ИНДИКАТОРА ЗАГРУЗКИ НА ОВЕРЛЕЕ --- */
+      /* Стили для лоадера */
       #modal-overlay #analysis-loader {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          color: white;
-          font-size: 1.5em;
-          text-align: center;
-          padding: 20px;
-          background-color: rgba(0, 0, 0, 0.7); /* Немного фона для читаемости */
-          border-radius: 5px;
+          position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+          color: white; font-size: 1.5em; text-align: center;
+          padding: 20px; background-color: rgba(0, 0, 0, 0.7); border-radius: 5px;
       }
+      /* Стили для кнопок-ссылок */
+      #results-modal .download-links a {
+        display: inline-block; padding: 6px 12px; margin-top: 5px; background-color: #007bff; color: white; border: none; border-radius: 4px; text-decoration: none; font-size: 0.85em; cursor: pointer; text-align: center; transition: background-color 0.2s ease;
+      }
+      #results-modal .download-links a:hover { background-color: #0056b3; color: white; text-decoration: none; }
+      #results-modal .download-links a:active { background-color: #004085; }
+
+      .filter-controls {
+          display: flex; align-items: center; padding: 5px 15px;
+          background-color: #f0f0f0; border-top: 1px solid #ccc;
+      }
+      .filter-controls label { margin-right: 10px; font-size: 0.9em; }
+      .filter-controls input[type="range"] { flex-grow: 1; margin-right: 10px; cursor: pointer; }
+      .filter-controls #blur-sigma-value { font-weight: bold; min-width: 25px; text-align: right; }
+
+      /* Стиль для кнопки "Применить фильтр" */
+      #apply-filter-button { /* Переименовали apply-blur-button */
+          padding: 4px 8px; margin-left: 5px; /* Уменьшил отступ */
+          background-color: #28a745; color: white; border: none;
+          border-radius: 4px; cursor: pointer; font-size: 0.85em;
+      }
+      #apply-filter-button:hover { background-color: #218838; }
+      #apply-filter-button:disabled { background-color: #7fc490; cursor: not-allowed; }
+
+      /* Индикатор загрузки для фильтра */
+      #filter-loader { /* Переименовали blur-loader */
+          display: none; margin-left: 10px; font-style: italic;
+          font-size: 0.85em; color: #555;
+      }
+
 
   </style>
   </head>
@@ -354,13 +349,24 @@
               </ul>
             </div>
           </li>
-            <!-- ADDED: Analyze Button -->
-            <li class="menu-item">
-              <button class="menu-button" id="btn-analyze">Анализ</button> <!-- Перевод -->
-                <!-- No submenu needed for this simple action -->
-            </li>
+          <li class="menu-item">
+            <button class="menu-button" id="btn-analyze">Анализ</button>
+          </li>
+          <li class="menu-item">
+            <button id="reset-plots-button" title="Сбросить накопленные графики профилей" style="margin-left: 15px; vertical-align: middle;">Сбросить графики</button>
         </ul>
-        <!-- <p class="msg">Menu Scrolling <b>Left ⇔ Right</b></p> -->
+        
+        <!-- БЛОК УПРАВЛЕНИЯ ФИЛЬТРОМ -->
+        <div class="filter-controls">
+          <label for="filter-slider">Фильтр:</label>
+          <!-- Изменили диапазон и шаг, ID -->
+          <input type="range" id="filter-slider" min="-5" max="5" step="0.5" value="0">
+          <span id="filter-value-display">0.0</span> <!-- Изменили ID -->
+          <!-- Переименовали кнопку и лоадер -->
+          <button id="apply-filter-button">Применить фильтр</button>
+          <span id="filter-loader">Обработка...</span>
+      </div>
+      
     </div>
 
   <!-- ADDED: Modal Structure -->
@@ -374,34 +380,36 @@
   </div>
   
   <div id="results-modal" style="display: none;">
-      <button id="modal-close-button" title="Закрыть">×</button> <!-- Кнопка закрытия -->
-      <h2>Результаты анализа</h2> <!-- Перевод -->
-      <div id="modal-content">
-          <div class="results">
-              <div class="result-item">
-                  <h3>2D Спектр</h3> <!-- Перевод -->
-                  <img id="spectrum-image" src="" alt="2D Спектр">
-                  <div class="download-links">
-                      <a id="download-spectrum" href="#" download>Скачать спектр</a> <!-- Перевод -->
-                  </div>
-              </div>
-              <div class="result-item">
-                  <h3>Сечение под 45°</h3> <!-- Перевод -->
-                  <img id="profile-plot" src="" alt="Сечение под 45°">
-                  <div class="download-links">
-                      <a id="download-profile" href="#" download>Скачать профиль</a> <!-- Перевод -->
-                  </div>
-              </div>
-              <div class="result-item">
-                  <h3>Выделенная область</h3> <!-- Перевод -->
-                  <img id="cropped-image-display" src="" alt="Выделенная область">
-                  <div class="download-links">
-                      <a id="download-crop" href="#" download>Скачать область</a> <!-- Перевод -->
-                  </div>
-              </div>
-          </div>
-      </div>
-  </div>
+    <button id="modal-close-button" title="Закрыть">×</button>
+    <h2>Результаты анализа</h2>
+    <div id="modal-content">
+        <div class="results">
+            <!-- Элемент 1: Исходная область -->
+            <div class="result-item">
+                <h3>Выделенная область</h3>
+                <img id="cropped-image-display" src="" alt="Выделенная область">
+                <div class="download-links">
+                    <a id="download-crop" href="#" download>Скачать область</a>
+                </div>
+            </div>
+            <!-- Элемент 2: 2D Спектр -->
+            <div class="result-item">
+                <h3>2D Спектр</h3>
+                <img id="spectrum-image" src="" alt="2D Спектр">
+                <div class="download-links">
+                    <a id="download-spectrum" href="#" download>Скачать спектр</a>
+                </div>
+            </div>
+            <!-- Элемент 3: Профиль -->
+            <div class="result-item">
+                <h3>Сечение под 45°</h3>
+                <img id="profile-plot" src="" alt="Сечение под 45°">
+                <div class="download-links">
+                    <a id="download-profile" href="#" download>Скачать профиль</a>
+                </div>
+            </div>
+        </div>
+    </div>
   <!-- End Modal Structure -->
 
     <!-- Load JS Dependencies -->
@@ -417,169 +425,241 @@
   <!-- This file MUST initialize the editor, e.g., window.imageEditor = new tui.ImageEditor(...) -->
   <script type="text/javascript" src="{{ url_for('static', filename='js/tui-image-editor/js/service-mobile.js') }}"></script>
     
-    <!-- 8. ADDED: Analysis Logic Script -->
-    <script>
-      $(function() {
-          // --- Селекторы ---
-          const analyzeButtonSelector = '#btn-analyze';
-          const modalSelector = '#results-modal';
-          const overlaySelector = '#modal-overlay';
-          const loaderSelector = '#analysis-loader'; // Селектор для нового лоадера
-          const modalCloseButtonSelector = '#modal-close-button';
-
-          // Селекторы элементов внутри модального окна
-          const spectrumImageSelector = '#results-modal #spectrum-image';
-          const profilePlotSelector = '#results-modal #profile-plot';
-          const croppedImageDisplaySelector = '#results-modal #cropped-image-display';
-          const downloadCropLinkSelector = '#results-modal #download-crop';
-          const downloadSpectrumLinkSelector = '#results-modal #download-spectrum';
-          const downloadProfileLinkSelector = '#results-modal #download-profile';
-
-          // --- Получение экземпляра редактора ---
-          const editorInstance = window.imageEditor;
-
-          // --- Загрузка изображения по умолчанию (можно убрать, если не нужно) ---
-          const imageUrl = "https://loremflickr.com/320/240"; // Путь к вашему default.jpg
-          if (editorInstance) {
-              // Проверяем, существует ли файл изображения по умолчанию перед загрузкой
-              fetch(imageUrl)
-                .then(response => {
-                  if (response.ok) {
-                    editorInstance.loadImageFromURL(imageUrl, 'DefaultImage').then(() => {
-                        console.log("Изображение по умолчанию загружено.");
-                        if(editorInstance) editorInstance.clearUndoStack();
-                    }).catch(err => {
-                        console.error("Ошибка при загрузке изображения по умолчанию в редактор:", err);
-                    });
-                  } else {
-                    console.log("Файл изображения по умолчанию не найден, редактор останется пустым.");
-                  }
-                }).catch(err => {
-                   console.error("Ошибка при проверке наличия изображения по умолчанию:", err);
-                });
-
-          } else {
-               console.error("Экземпляр редактора (window.imageEditor) не найден при попытке загрузки изображения.");
-          }
-
-          // Проверка, что редактор инициализирован
-          if (!editorInstance) {
-               console.error("Экземпляр редактора (window.imageEditor) не найден. Убедитесь, что service-mobile.js инициализирует его.");
-               $(analyzeButtonSelector).prop('disabled', true).css('opacity', 0.5).attr('title', 'Редактор не загружен'); // Отключаем кнопку анализа
-               return; // Прекращаем выполнение, если редактора нет
-          }
-
-          // --- jQuery объекты ---
-          const $analyzeButton = $(analyzeButtonSelector);
-          const $modal = $(modalSelector);
-          const $overlay = $(overlaySelector);
-          const $loader = $(loaderSelector); // Объект для лоадера
-          const $modalCloseButton = $(modalCloseButtonSelector);
-          const $spectrumImage = $(spectrumImageSelector);
-          const $profilePlot = $(profilePlotSelector);
-          const $croppedImageDisplay = $(croppedImageDisplaySelector);
-          const $downloadCropLink = $(downloadCropLinkSelector);
-          const $downloadSpectrumLink = $(downloadSpectrumLinkSelector);
-          const $downloadProfileLink = $(downloadProfileLinkSelector);
-
-          // --- Функция закрытия модального окна ---
-          function closeModal() {
-              $modal.fadeOut();
-              $overlay.fadeOut();
-              $loader.hide(); // Прячем лоадер при закрытии
-          }
-
-          // --- Обработчики событий ---
-
-          // Клик по кнопке "Анализ"
-          $analyzeButton.on('click', function() {
+      <!-- СКРИПТ ЛОГИКИ АНАЛИЗА (Обновленный) -->
+        <script>
+          $(function() {
+              // --- Селекторы ---
+              const analyzeButtonSelector = '#btn-analyze';
+              const resetButtonSelector = '#reset-plots-button';
+              const filterSliderSelector = '#filter-slider'; // Переименовали
+              const filterValueDisplaySelector = '#filter-value-display'; // Переименовали
+              const applyFilterButtonSelector = '#apply-filter-button'; // Переименовали
+              const filterLoaderSelector = '#filter-loader'; // Переименовали
+              const modalSelector = '#results-modal';
+              const overlaySelector = '#modal-overlay';
+              const loaderSelector = '#analysis-loader';
+              const modalCloseButtonSelector = '#modal-close-button';
+              const applyBlurButtonSelector = '#apply-blur-button'; // <<< Новый селектор
+              const blurLoaderSelector = '#blur-loader'; // <<< Новый селектор
+    
+              // Селекторы элементов внутри модального окна
+              const croppedImageDisplaySelector = '#results-modal #cropped-image-display';
+              const spectrumImageSelector = '#results-modal #spectrum-image';
+              const profilePlotSelector = '#results-modal #profile-plot';
+              const profileTitleSelector = '#results-modal #profile-title'; // Селектор заголовка профиля
+              const analysisLoaderSelector = '#analysis-loader'; // Переименовали для ясности
+              const downloadCropLinkSelector = '#results-modal #download-crop';
+              const downloadSpectrumLinkSelector = '#results-modal #download-spectrum';
+              const downloadProfileLinkSelector = '#results-modal #download-profile';
+    
+              // --- Получение экземпляра редактора ---
+              const editorInstance = window.imageEditor;
+    
+              // --- Загрузка изображения по умолчанию (если нужно) ---
+              // ... (код загрузки default.jpg остался без изменений) ...
+              const imageUrl = "https://loremflickr.com/320/240";
+              if (editorInstance) {
+                  fetch(imageUrl)
+                    .then(response => { if (response.ok) { editorInstance.loadImageFromURL(imageUrl, 'DefaultImage').then(() => { if(editorInstance) editorInstance.clearUndoStack(); }); } })
+                    .catch(err => { console.error("Ошибка fetch default image:", err); });
+              } else { console.error("Редактор не найден при загрузке default image."); }
+    
+    
               if (!editorInstance) {
-                   alert("Редактор не готов к анализу."); // Перевод
+                   console.error("Экземпляр редактора (window.imageEditor) не найден.");
+                   $(analyzeButtonSelector).prop('disabled', true).css('opacity', 0.5).attr('title', 'Редактор не загружен');
+                   $(resetButtonSelector).prop('disabled', true); // Отключаем сброс тоже
                    return;
               }
-              // Получаем текущее изображение (обрезанное, если применялось кадрирование)
-              const imageDataUrl = editorInstance.toDataURL({format: 'png'}); // Используем PNG для лучшего качества
-              if (!imageDataUrl) {
-                  alert('Не удалось получить данные изображения. Убедитесь, что изображение загружено и кадрирование (если нужно) применено.'); // Перевод
-                  return;
-              }
+    
+              // --- jQuery объекты ---
+              const $analyzeButton = $(analyzeButtonSelector);
+              const $resetButton = $(resetButtonSelector); // Объект кнопки сброса
+              const $modal = $(modalSelector);
+              const $overlay = $(overlaySelector);
+              const $loader = $(loaderSelector);
+              const $filterSlider = $(filterSliderSelector); // Переименовали
+              const $filterValueDisplay = $(filterValueDisplaySelector); // Переименовали
+              const $applyFilterButton = $(applyFilterButtonSelector); // Переименовали
+              const $filterLoader = $(filterLoaderSelector); // Переименовали
+              const $modalCloseButton = $(modalCloseButtonSelector);
+              const $croppedImageDisplay = $(croppedImageDisplaySelector);
+              const $spectrumImage = $(spectrumImageSelector);
+              const $profilePlot = $(profilePlotSelector);
+              const $profileTitle = $(profileTitleSelector); // Объект заголовка профиля
+              const $downloadCropLink = $(downloadCropLinkSelector);
+              const $downloadSpectrumLink = $(downloadSpectrumLinkSelector);
+              const $analysisLoader = $(analysisLoaderSelector); // Переименовали
+              const $downloadProfileLink = $(downloadProfileLinkSelector);
+    
+              // --- Функция закрытия модального окна ---
+              function closeModal() { $modal.fadeOut(); $overlay.fadeOut(); $loader.hide(); }
+    
+              // --- Обработчики событий ---
+              // Обновление значения фильтра при движении слайдера
+              $filterSlider.on('input', function() {
+                    const value = parseFloat($(this).val()).toFixed(1);
+                    $filterValueDisplay.text(value);
+                    // Можно добавить текст "Резкость" / "Размытие"
+                    if (value > 0) $filterValueDisplay.attr('title', 'Размытие');
+                    else if (value < 0) $filterValueDisplay.attr('title', 'Резкость');
+                    else $filterValueDisplay.attr('title', 'Оригинал');
+                });
 
-              // --- Начать Анализ ---
-              $modal.hide(); // Прячем модалку с результатами (если была открыта)
-              $loader.show(); // Показываем лоадер
-              $overlay.fadeIn(); // Показываем оверлей
-              $analyzeButton.prop('disabled', true).css('opacity', 0.6);
+                // --- Клик по кнопке "Применить фильтр" ---
+                $applyFilterButton.on('click', function() {
+                    if (!editorInstance) { alert("Редактор не готов."); return; }
+                    const imageDataUrl = editorInstance.toDataURL({format: 'png'});
+                    if (!imageDataUrl) { alert('Не удалось получить данные текущего изображения.'); return; }
 
-              // --- AJAX Запрос ---
-              $.ajax({
-                  url: '/analyze', // Ваш эндпоинт Flask
-                  type: 'POST',
-                  contentType: 'application/json',
-                  data: JSON.stringify({ image_data: imageDataUrl }),
-                  dataType: 'json'
-              })
-              .done(function(result) { // Успешное завершение запроса
-                  if (result.status === 'success') {
-                      // Обновляем изображения и ссылки ВНУТРИ МОДАЛЬНОГО ОКНА
-                      $spectrumImage.attr('src', result.spectrum_url);
-                      $profilePlot.attr('src', result.profile_url);
-                      $croppedImageDisplay.attr('src', imageDataUrl); // Показываем, что отправили
+                    const filterValue = parseFloat($filterSlider.val());
 
-                      $downloadCropLink.attr('href', result.saved_files.crop)
-                                       .attr('download', result.saved_files.crop.split('/').pop());
-                      $downloadSpectrumLink.attr('href', result.saved_files.spectrum)
-                                           .attr('download', result.saved_files.spectrum.split('/').pop());
-                      $downloadProfileLink.attr('href', result.saved_files.profile)
-                                            .attr('download', result.saved_files.profile.split('/').pop());
+                    // Если значение 0, ничего не делаем (можно добавить сброс к оригиналу, если нужно)
+                    if (Math.abs(filterValue) < 0.01) { // Сравнение с плавающей точкой
+                        alert("Фильтр не будет применен (значение 0).");
+                        return;
+                    }
 
-                      // Прячем лоадер и показываем модальное окно с результатами
-                      $loader.hide();
-                      $modal.fadeIn(); // Оверлей уже виден
+                    let apiUrl = '';
+                    let payload = { image_data: imageDataUrl };
 
-                  } else {
-                      // Ошибка со стороны сервера
-                      $loader.hide(); // Прячем лоадер
-                      $overlay.fadeOut(); // Прячем оверлей
-                      alert('Ошибка анализа: ' + (result.message || 'Неизвестная ошибка сервера')); // Перевод
-                  }
-              })
-              .fail(function(jqXHR, textStatus, errorThrown) { // Ошибка AJAX-запроса
-                  console.error('AJAX Ошибка:', textStatus, errorThrown, jqXHR.responseText);
-                  $loader.hide(); // Прячем лоадер
-                  $overlay.fadeOut(); // Прячем оверлей
-                  alert('Ошибка сети или сервера во время анализа. Проверьте консоль.'); // Перевод
-              })
-              .always(function() { // Выполняется всегда (после done или fail)
-                  // --- Завершение Анализа ---
-                  // Лоадер и оверлей уже должны быть скрыты в done/fail/closeModal
-                  $analyzeButton.prop('disabled', false).css('opacity', 1); // Включаем кнопку обратно
+                    if (filterValue > 0) {
+                        apiUrl = '/apply_blur';
+                        payload.sigma = filterValue;
+                    } else { // filterValue < 0
+                        apiUrl = '/apply_sharpen';
+                        payload.strength = filterValue;
+                    }
+
+                    // Блокируем интерфейс
+                    $applyFilterButton.prop('disabled', true);
+                    $analyzeButton.prop('disabled', true);
+                    $resetButton.prop('disabled', true);
+                    $filterSlider.prop('disabled', true);
+                    $filterLoader.show(); // Показываем лоадер ФИЛЬТРА
+
+                    // AJAX запрос
+                    $.ajax({
+                        url: apiUrl,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(payload),
+                        dataType: 'json'
+                    })
+                    .done(function(result) {
+                        if (result.status === 'success' && result.processed_image_data) {
+                            // Загружаем обработанное изображение ОБРАТНО в редактор
+                            editorInstance.loadImageFromURL(result.processed_image_data, 'FilteredImage')
+                                .then(() => {
+                                    console.log("Обработанное изображение загружено в редактор.");
+                                    if(editorInstance) editorInstance.clearUndoStack();
+                                    // Сбросим слайдер в 0 после успешного применения? (Опционально)
+                                    // $filterSlider.val(0).trigger('input');
+                                })
+                                .catch(err => { /* ... обработка ошибки загрузки ... */ });
+                        } else {
+                            alert('Ошибка применения фильтра: ' + (result.message || 'Неизвестная ошибка сервера'));
+                        }
+                    })
+                    .fail(function() {
+                        alert('Ошибка сети при попытке применить фильтр.');
+                    })
+                    .always(function() {
+                        // Разблокируем интерфейс
+                        $applyFilterButton.prop('disabled', false);
+                        $analyzeButton.prop('disabled', false);
+                        $resetButton.prop('disabled', false);
+                        $filterSlider.prop('disabled', false);
+                        $filterLoader.hide();
+                    });
+                });
+                // --- Конец обработчика "Применить фильтр" ---
+
+    
+              // Клик по кнопке "Анализ"
+              $analyzeButton.on('click', function() {
+                  if (!editorInstance) { alert("Редактор не готов к анализу."); return; }
+                  const imageDataUrl = editorInstance.toDataURL({format: 'png'});
+                  if (!imageDataUrl) { alert('Не удалось получить данные изображения.'); return; }
+    
+                  // Начать Анализ
+                  $modal.hide(); $loader.show(); $overlay.fadeIn();
+                  $analyzeButton.prop('disabled', true).css('opacity', 0.6);
+                  $resetButton.prop('disabled', true); // Блокируем сброс во время анализа
+    
+                  // AJAX Запрос к /analyze
+                  $.ajax({ url: '/analyze', type: 'POST', contentType: 'application/json', data: JSON.stringify({ image_data: imageDataUrl }), dataType: 'json' })
+                  .done(function(result) {
+                      if (result.status === 'success') {
+                          // Обновляем изображения и ссылки
+                          $croppedImageDisplay.attr('src', imageDataUrl);
+                          $spectrumImage.attr('src', result.spectrum_url || '');
+                          $profilePlot.attr('src', result.profile_url || '');
+    
+                          // Обновляем заголовок профиля с количеством графиков
+                          if (result.num_profiles > 0) {
+                              $profileTitle.text(`Сечение под 45° (${result.num_profiles} шт.)`);
+                          } else {
+                              $profileTitle.text('Сечение под 45°');
+                          }
+    
+                          $downloadCropLink.attr('href', result.saved_files.crop || '#').attr('download', (result.saved_files.crop || '').split('/').pop());
+                          $downloadSpectrumLink.attr('href', result.saved_files.spectrum || '#').attr('download', (result.saved_files.spectrum || '').split('/').pop());
+                          $downloadProfileLink.attr('href', result.saved_files.profile || '#').attr('download', (result.saved_files.profile || '').split('/').pop());
+    
+                          // Показываем модальное окно
+                          $loader.hide(); $modal.fadeIn();
+                      } else { /* ... (обработка ошибки сервера) ... */ }
+                  })
+                  .fail(function(jqXHR, textStatus, errorThrown) { /* ... (обработка ошибки сети) ... */ })
+                  .always(function() {
+                      // Разблокируем кнопки
+                      $analyzeButton.prop('disabled', false).css('opacity', 1);
+                      $resetButton.prop('disabled', false);
+                  });
               });
-          });
-
-          // Клик по кнопке закрытия модального окна
-          $modalCloseButton.on('click', function() {
-              closeModal();
-          });
-
-          // Клик по оверлею (закрывает модальное окно)
-          $overlay.on('click', function(event) {
-              // Закрывать только если клик был по самому оверлею, а не по содержимому (лоадеру или модалке)
-              if (event.target === this) {
-                 closeModal();
-              }
-          });
-
-          // Закрытие модального окна по нажатию Esc
-          $(document).on('keydown', function(event) {
-              if (event.key === "Escape" || event.key === "Esc") {
-                  if ($modal.is(':visible') || $loader.is(':visible')) { // Если видно модалку ИЛИ лоадер
-                       closeModal();
+    
+              // Клик по кнопке "Сбросить графики"
+              $resetButton.on('click', function() {
+                  if (!confirm("Вы уверены, что хотите сбросить все накопленные графики профилей?")) {
+                      return; // Отмена, если пользователь нажал "Нет"
                   }
-              }
-          });
-
-      }); // Конец $(function() { ... });
-  </script>
+    
+                  $resetButton.prop('disabled', true); // Блокируем на время запроса
+                  $analyzeButton.prop('disabled', true);
+    
+                  // AJAX POST запрос к /reset_plots
+                  $.ajax({ url: '/reset_plots', type: 'POST', dataType: 'json' })
+                  .done(function(response) {
+                      if (response.status === 'success') {
+                          alert(response.message); // Сообщение об успехе
+                          // Очищаем изображение профиля в модальном окне
+                          $profilePlot.attr('src', '');
+                          $profileTitle.text('Сечение под 45°'); // Сбрасываем заголовок
+                          // Можно также закрыть модалку, если она открыта
+                          closeModal();
+                      } else {
+                          alert('Ошибка при сбросе: ' + (response.message || 'Неизвестная ошибка'));
+                      }
+                  })
+                  .fail(function() {
+                      alert('Ошибка сети при попытке сброса графиков.');
+                  })
+                  .always(function() {
+                      // Разблокируем кнопки в любом случае
+                      $resetButton.prop('disabled', false);
+                      $analyzeButton.prop('disabled', false);
+                  });
+              });
+    
+    
+              // --- Остальные обработчики (закрытие модалки) ---
+              $modalCloseButton.on('click', closeModal);
+              $overlay.on('click', function(event) { if (event.target === this) closeModal(); });
+              $(document).on('keydown', function(event) { if (event.key === "Escape" || event.key === "Esc") { if ($modal.is(':visible') || $loader.is(':visible')) closeModal(); } });
+    
+          }); // Конец $(function() { ... });
+        </script>
 
   </body>
 </html>
