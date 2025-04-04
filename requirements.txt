@@ -6,3 +6,4 @@ matplotlib>=3.4
 uuid
 waitress
 opencv-python>=4.5  # Добавлено
+Flask-Session==0.8.0

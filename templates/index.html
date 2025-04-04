@@ -353,12 +353,16 @@
             <button class="menu-button" id="btn-analyze">Анализ</button>
           </li>
           <li class="menu-item">
-            <button id="reset-plots-button" title="Сбросить накопленные графики профилей" style="margin-left: 15px; vertical-align: middle;">Сбросить графики</button>
+            <button id="reset-plots-button" 
+                    class="menu-button" 
+                    title="Сбросить накопленные графики профилей" 
+            y>Сбросить</button>
+          </li>
         </ul>
         
         <!-- БЛОК УПРАВЛЕНИЯ ФИЛЬТРОМ -->
         <div class="filter-controls">
-          <label for="filter-slider">Фильтр:</label>
+          <label for="filter-slider">Фильтр Гаусса:</label>
           <!-- Изменили диапазон и шаг, ID -->
           <input type="range" id="filter-slider" min="-5" max="5" step="0.5" value="0">
           <span id="filter-value-display">0.0</span> <!-- Изменили ID -->
